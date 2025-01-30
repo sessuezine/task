@@ -69,7 +69,7 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="py-6">
       <h1 className="text-2xl font-bold mb-6">Tasks</h1>
       
       <div className="mb-6 bg-white rounded-xl shadow-sm p-6">
