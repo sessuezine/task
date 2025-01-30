@@ -1,27 +1,28 @@
-import { auth, signOut } from 'app/auth';
+'use client'
 
-export default async function ProtectedPage() {
-  let session = await auth();
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function ProtectedPage() {
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+      }
+    }
+
+    checkUser()
+  }, [router])
 
   return (
-    <div className="flex h-screen bg-black">
-      <div className="w-screen h-screen flex flex-col space-y-5 justify-center items-center text-white">
-        You are logged in as {session?.user?.email}
-        <SignOut />
-      </div>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold">Protected Page</h1>
+      <p>You can only see this if you&apos;re logged in.</p>
     </div>
-  );
-}
-
-function SignOut() {
-  return (
-    <form
-      action={async () => {
-        'use server';
-        await signOut();
-      }}
-    >
-      <button type="submit">Sign out</button>
-    </form>
-  );
+  )
 }

@@ -1,21 +1,9 @@
 import './globals.css';
+import { Inter } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react';
+import Nav from '@/components/nav';
 
-import { GeistSans } from 'geist/font/sans';
-
-let title = 'Next.js + Postgres Auth Starter';
-let description =
-  'This is a Next.js starter kit that uses NextAuth.js for simple email + password login and a Postgres database to persist the data.';
-
-export const metadata = {
-  title,
-  description,
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description,
-  },
-  metadataBase: new URL('https://nextjs-postgres-auth.vercel.app'),
-};
+const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({
   children,
@@ -24,7 +12,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={GeistSans.variable}>{children}</body>
+      <body className={`${inter.className} min-h-screen bg-gray-50`}>
+        <div className="flex min-h-screen">
+          <Nav />
+          <main className="flex-1 ml-64 p-8">
+            {children}
+          </main>
+        </div>
+        <Analytics />
+      </body>
     </html>
   );
 }
