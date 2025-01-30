@@ -13,11 +13,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-gray-50`}>
-        <div className="flex min-h-screen">
-          <Nav />
-          <main className="w-full">
-            {children}
-          </main>
+        <div className="flex">
+          {/* Hide nav on mobile, show on desktop */}
+          <div className="hidden md:block">
+            <Nav />
+          </div>
+          
+          {/* Main content - centered with padding */}
+          <div className="flex-1">
+            <main className="px-4 max-w-8xl mx-auto w-full">
+              {children}
+            </main>
+          </div>
         </div>
         <Analytics />
       </body>
