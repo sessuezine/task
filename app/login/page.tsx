@@ -1,38 +1,48 @@
-import Link from 'next/link';
-import { Form } from 'app/form';
-import { signIn } from 'app/auth';
-import { SubmitButton } from 'app/submit-button';
+'use client';
 
-export default function Login() {
+import { createClient } from '../../lib/supabase/client';
+import { useRouter } from 'next/navigation';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+    });
+
+    if (!error) {
+      router.push('/dashboard');
+    }
+  };
+
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
-      <div className="z-10 w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 shadow-xl">
-        <div className="flex flex-col items-center justify-center space-y-3 border-b border-gray-200 bg-white px-4 py-6 pt-8 text-center sm:px-16">
-          <h3 className="text-xl font-semibold">Sign In</h3>
-          <p className="text-sm text-gray-500">
-            Use your email and password to sign in
-          </p>
-        </div>
-        <Form
-          action={async (formData: FormData) => {
-            'use server';
-            await signIn('credentials', {
-              redirectTo: '/protected',
-              email: formData.get('email') as string,
-              password: formData.get('password') as string,
-            });
-          }}
-        >
-          <SubmitButton>Sign in</SubmitButton>
-          <p className="text-center text-sm text-gray-600">
-            {"Don't have an account? "}
-            <Link href="/register" className="font-semibold text-gray-800">
-              Sign up
-            </Link>
-            {' for free.'}
-          </p>
-        </Form>
-      </div>
+    <div className="flex min-h-screen items-center justify-center">
+      <form onSubmit={handleSignIn} className="space-y-4 w-full max-w-md p-8">
+        <h1 className="text-2xl font-bold mb-8">Login</h1>
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          required
+          className="w-full p-2 border rounded"
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          required
+          className="w-full p-2 border rounded"
+        />
+        <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded">
+          Sign In
+        </button>
+      </form>
     </div>
   );
 }
