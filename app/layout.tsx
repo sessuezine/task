@@ -68,7 +68,7 @@ export default function RootLayout({
           </div>
         </header>
 
-        <div className="flex" onClick={() => isOpen && setIsOpen(false)}>
+        <div className="flex">
           {/* Desktop Navigation */}
           <div className="hidden md:block w-64 shrink-0">
             <Nav isOpen={false} setIsOpen={setIsOpen} />
@@ -76,20 +76,12 @@ export default function RootLayout({
 
           {/* Mobile Navigation */}
           {isOpen && (
-            <div 
-              className="md:hidden fixed inset-y-0 left-0 w-64 z-50 bg-white"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
-              <Nav isOpen={isOpen} setIsOpen={setIsOpen} />
-            </div>
+            <Nav isOpen={isOpen} setIsOpen={setIsOpen} />
           )}
 
           {/* Main Content */}
           <main className="flex-1 min-h-screen">
-            <div className="max-w-8xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="pt-16 md:pt-6 px-6">
                 {children}
               </div>
