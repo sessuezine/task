@@ -104,7 +104,7 @@ export default function JournalPage() {
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-[--bg-card] border-none rounded-lg px-3 py-2"
+            className="bg-[--bg-card] border-none rounded-lg px-3 py-2 w-[180px] h-[40px]"
           >
             {getAvailableMonths().map(month => (
               <option key={month} value={month}>
@@ -114,23 +114,20 @@ export default function JournalPage() {
           </select>
         </div>
 
-        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
-            <div>
-              <h2 className="font-medium">Journal Summary</h2>
-              <p className="text-[--text-secondary] text-sm">
-                You&apos;ve written {entries.length} entries this month. 
-                Most common mood: {getMostCommonMood(entries)}
-              </p>
-            </div>
+        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
+          <div>
+            <h2 className="font-medium">Journal Summary</h2>
+            <p className="text-[--text-secondary] text-sm">
+              You&apos;ve written {entries.length} entries this month. Most common mood: {getMostCommonMood(entries)}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Input Box */}
       <form onSubmit={handleSubmit} className="mb-8">
-        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
+        <div className="bg-[--bg-card] rounded-lg px-4 shadow-sm">
           <MoodSelector selected={mood} onSelect={setMood} />
           <textarea
             value={content}
