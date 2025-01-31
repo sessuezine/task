@@ -1,15 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { 
+  DndContext, 
+  DragOverlay,
+  useSensors,
+  useSensor,
+  PointerSensor,
+  closestCorners
+} from '@dnd-kit/core'
 import { Task, NewTask } from '@/src/lib/types'
 import TaskForm from '@/components/TaskForm'
+import { KanbanColumn } from '../../components/KanbanColumn'
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'kanban' | 'overview'>('kanban')
   const supabase = createClientComponentClient()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
 
   useEffect(() => {
     fetchTasks()
@@ -37,7 +55,11 @@ export default function TasksPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      if (data) setTasks(data)
+      if (data) {
+        console.log('Fetched tasks:', data)
+        console.log('Task time_slots:', data.map(t => t.time_slot))
+        setTasks(data)
+      }
     } catch (error) {
       console.error('Error fetching tasks:', error)
     }
@@ -72,9 +94,36 @@ export default function TasksPage() {
     }
   }
 
-  const todoTasks = tasks.filter(t => t.time_slot === 'todo')
+  const todoTasks = tasks.filter(t => {
+    console.log('Checking task:', t.title, 'time_slot:', t.time_slot)
+    return t.time_slot === 'todo'
+  })
   const inProgressTasks = tasks.filter(t => t.time_slot === 'in_progress')
   const doneTasks = tasks.filter(t => t.time_slot === 'done')
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id)
+  }
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event
+
+    if (!over || !active) return
+
+    const validStatuses = ['todo', 'in_progress', 'done']
+    if (!validStatuses.includes(over.id)) return
+
+    try {
+      await supabase
+        .from('tasks')
+        .update({ time_slot: over.id })
+        .eq('id', active.id)
+      
+      fetchTasks()
+    } catch (error) {
+      console.error('Error updating task:', error)
+    }
+  }
 
   return (
     <div className="p-[--spacing-base] max-w-7xl mx-auto">
@@ -124,89 +173,30 @@ export default function TasksPage() {
 
       {/* Tab Content */}
       {activeTab === 'kanban' && (
-        <div className="grid grid-cols-3 gap-6">
-          {/* Todo Column */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-medium">To Do</h3>
-              <span className="task-count">
-                {todoTasks.length}
-              </span>
-            </div>
-            {todoTasks.map(task => (
-              <div key={task.id} className="task-card hover:bg-gray-200 transition-colors mb-3 group relative">
-                <button 
-                  onClick={async () => {
-                    await supabase.from('tasks').delete().match({ id: task.id })
-                    // Refresh tasks after deletion
-                    fetchTasks()
-                  }}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-5 h-5 text-gray-500 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                <h4 className="font-medium">{task.title}</h4>
-                <p className="text-[--text-secondary] text-sm mt-1">{task.description}</p>
-              </div>
-            ))}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-3 gap-6">
+            <KanbanColumn
+              title="To Do"
+              tasks={todoTasks}
+              id="todo"
+            />
+            <KanbanColumn
+              title="In Progress"
+              tasks={inProgressTasks}
+              id="in_progress"
+            />
+            <KanbanColumn
+              title="Done"
+              tasks={doneTasks}
+              id="done"
+            />
           </div>
-
-          {/* In Progress Column */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-medium">In Progress</h3>
-              <span className="task-count">
-                {inProgressTasks.length}
-              </span>
-            </div>
-            {inProgressTasks.map(task => (
-              <div key={task.id} className="task-card hover:bg-gray-200 transition-colors mb-3 group relative">
-                <button 
-                  onClick={async () => {
-                    await supabase.from('tasks').delete().match({ id: task.id })
-                    fetchTasks()
-                  }}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-5 h-5 text-gray-500 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                <h4 className="font-medium">{task.title}</h4>
-                <p className="text-[--text-secondary] text-sm mt-1">{task.description}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Done Column */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-medium">Done</h3>
-              <span className="task-count">
-                {doneTasks.length}
-              </span>
-            </div>
-            {doneTasks.map(task => (
-              <div key={task.id} className="task-card hover:bg-gray-200 transition-colors mb-3 group relative">
-                <button 
-                  onClick={async () => {
-                    await supabase.from('tasks').delete().match({ id: task.id })
-                    fetchTasks()
-                  }}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-5 h-5 text-gray-500 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                <h4 className="font-medium">{task.title}</h4>
-                <p className="text-[--text-secondary] text-sm mt-1">{task.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        </DndContext>
       )}
 
       {activeTab === 'overview' && (
@@ -245,7 +235,10 @@ export default function TasksPage() {
         <div className="modal-backdrop">
           <div className="bg-[--bg-card] rounded-lg w-full max-w-md">
             <TaskForm 
-              onSubmit={handleCreateTask}
+              onSubmit={async (newTask) => {
+                await handleCreateTask(newTask)
+                setIsFormOpen(false)
+              }}
               onClose={() => setIsFormOpen(false)}
             />
           </div>

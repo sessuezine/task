@@ -21,7 +21,7 @@
   }
 
   .task-card {
-    @apply bg-white p-3 rounded-lg shadow-sm cursor-move hover:shadow-md transition-shadow;
+    @apply bg-gray-100 p-4 rounded-lg cursor-grab active:cursor-grabbing;
   }
 
   /* Task Summary */
