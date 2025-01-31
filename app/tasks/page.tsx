@@ -22,6 +22,11 @@ export default function TasksPage() {
       }
     }
     checkAuth()
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('Current user ID:', user?.id)
+    }
+    checkUser()
   }, [])
 
   const fetchTasks = async () => {
@@ -72,106 +77,109 @@ export default function TasksPage() {
   const doneTasks = tasks.filter(t => t.time_slot === 'done')
 
   return (
-    <div className="p-6">
-      {/* AI Summary Card */}
-      <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex-shrink-0" />
-          <p className="text-blue-600">
-            Hey! You have {todoTasks.length} tasks To Do and {inProgressTasks.length} tasks In Progress. 
-            {inProgressTasks.length > 0 ? " Keep up the good work! Remember to start with the tasks in progress to make progress faster." : ""}
-          </p>
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header with Task Summary */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold">Tasks</h1>
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-black text-white px-4 py-2 rounded-lg"
+          >
+            Add Task
+          </button>
         </div>
-      </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Tasks</h1>
-        <button 
-          onClick={() => setIsFormOpen(true)} 
-          className="btn-primary"
-        >
-          Add Task
-        </button>
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-100" />
+            <div>
+              <h2 className="font-medium">Task Summary</h2>
+              <p className="text-sm text-gray-600">
+                You have {todoTasks.length} tasks To Do and {inProgressTasks.length} tasks In Progress. Keep up the good work!
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+        <div className="flex gap-6">
           <button
             onClick={() => setActiveTab('kanban')}
-            className={`py-2 px-1 border-b-2 ${
+            className={`pb-2 px-1 ${
               activeTab === 'kanban'
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-b-2 border-black text-black'
+                : 'text-gray-500'
             }`}
           >
-            Kanban
+            Kanban Board
           </button>
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-2 px-1 border-b-2 ${
+            className={`pb-2 px-1 ${
               activeTab === 'overview'
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-b-2 border-black text-black'
+                : 'text-gray-500'
             }`}
           >
             Overview
           </button>
-        </nav>
+        </div>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'kanban' && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-6">
           {/* Todo Column */}
-          <div className="bg-white rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-4 flex justify-between items-center">
-              To Do
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-medium">To Do</h3>
               <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
                 {todoTasks.length}
               </span>
-            </h2>
-            <div className="space-y-2">
+            </div>
+            <div className="space-y-3">
               {todoTasks.map(task => (
-                <div key={task.id} className="bg-gray-50 p-3 rounded-lg">
-                  <h3 className="font-medium">{task.title}</h3>
-                  <p className="text-sm text-gray-600">{task.description}</p>
+                <div key={task.id} className="bg-gray-100 p-4 rounded-lg">
+                  <h4 className="font-medium">{task.title}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* In Progress Column */}
-          <div className="bg-white rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-4 flex justify-between items-center">
-              In Progress
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-medium">In Progress</h3>
               <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
                 {inProgressTasks.length}
               </span>
-            </h2>
-            <div className="space-y-2">
+            </div>
+            <div className="space-y-3">
               {inProgressTasks.map(task => (
-                <div key={task.id} className="bg-gray-50 p-3 rounded-lg">
-                  <h3 className="font-medium">{task.title}</h3>
-                  <p className="text-sm text-gray-600">{task.description}</p>
+                <div key={task.id} className="bg-gray-100 p-4 rounded-lg">
+                  <h4 className="font-medium">{task.title}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Done Column */}
-          <div className="bg-white rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-4 flex justify-between items-center">
-              Done
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-medium">Done</h3>
               <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
                 {doneTasks.length}
               </span>
-            </h2>
-            <div className="space-y-2">
+            </div>
+            <div className="space-y-3">
               {doneTasks.map(task => (
-                <div key={task.id} className="bg-gray-50 p-3 rounded-lg">
-                  <h3 className="font-medium">{task.title}</h3>
-                  <p className="text-sm text-gray-600">{task.description}</p>
+                <div key={task.id} className="bg-gray-100 p-4 rounded-lg">
+                  <h4 className="font-medium">{task.title}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                 </div>
               ))}
             </div>
@@ -180,14 +188,41 @@ export default function TasksPage() {
       )}
 
       {activeTab === 'overview' && (
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Task Overview</h2>
-          {/* Add overview content */}
+        <div className="space-y-6">
+          {/* Statistics in 3 columns */}
+          <div className="grid grid-cols-3 gap-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-sm text-blue-600">Total Tasks</div>
+              <div className="text-2xl font-semibold">{tasks.length}</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-sm text-green-600">Completed</div>
+              <div className="text-2xl font-semibold">{doneTasks.length}</div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="text-sm text-yellow-600">In Progress</div>
+              <div className="text-2xl font-semibold">{inProgressTasks.length}</div>
+            </div>
+          </div>
+
+          {/* All Tasks full width below */}
+          <div>
+            <h3 className="font-medium mb-4">All Tasks</h3>
+            <div className="space-y-2">
+              {tasks.map(task => (
+                <div key={task.id} className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
+                  <span>{task.title}</span>
+                  <span className="text-sm text-gray-500">{task.time_slot}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Task Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-md">
             <TaskForm 
               onSubmit={handleCreateTask}
