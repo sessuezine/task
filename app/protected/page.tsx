@@ -1,12 +1,12 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { getSupabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function ProtectedPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = getSupabase()
 
   useEffect(() => {
     const checkUser = async () => {
