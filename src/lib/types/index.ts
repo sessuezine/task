@@ -3,11 +3,13 @@ export interface Task {
   title: string;
   description?: string;
   deadline?: Date;
-  timeSlot?: string;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  time_slot: string;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
 }
+
+export type NewTask = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>
 
 export interface JournalEntry {
   id: string;

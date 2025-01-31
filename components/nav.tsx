@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getSupabase } from '@/lib/supabase/client'
 
 interface NavProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface NavProps {
 
 export default function Nav({ isOpen, setIsOpen }: NavProps) {
   const pathname = usePathname()
-  const supabase = createClient()
+  const supabase = getSupabase()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
