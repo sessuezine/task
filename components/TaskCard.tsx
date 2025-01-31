@@ -7,22 +7,17 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: task.id,
   })
   const supabase = createClientComponentClient()
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined
-
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...listeners}
       {...attributes}
-      className="task-card group relative cursor-grab active:cursor-grabbing"
+      className="task-card group relative cursor-grab active:cursor-grabbing transform transition-all duration-200 ease-in-out"
     >
       <button 
         onClick={async () => {

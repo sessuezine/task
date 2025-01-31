@@ -8,7 +8,10 @@ import {
   useSensors,
   useSensor,
   PointerSensor,
-  closestCorners
+  MouseSensor,
+  TouchSensor,
+  closestCorners,
+  defaultDropAnimationSideEffects
 } from '@dnd-kit/core'
 import { Task, NewTask } from '@/src/lib/types'
 import TaskForm from '@/components/TaskForm'
@@ -196,6 +199,27 @@ export default function TasksPage() {
               id="done"
             />
           </div>
+          
+          <DragOverlay dropAnimation={{
+            sideEffects: defaultDropAnimationSideEffects({
+              styles: {
+                active: {
+                  opacity: '0.5',
+                },
+              },
+            }),
+          }}>
+            {activeId ? (
+              <div className="task-card cursor-grabbing">
+                <h4 className="font-medium">
+                  {tasks.find(task => task.id === activeId)?.title}
+                </h4>
+                <p className="text-[--text-secondary] text-sm mt-1">
+                  {tasks.find(task => task.id === activeId)?.description}
+                </p>
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       )}
 
