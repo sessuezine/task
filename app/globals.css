@@ -59,3 +59,68 @@
     font-family: inherit;
     padding: 1rem;
 }
+
+:root {
+  /* Colors */
+  --color-primary: #000000;
+  --color-primary-text: #ffffff;
+  
+  /* Background Colors */
+  --bg-card: #ffffff;
+  --bg-task: #f3f4f6;  /* gray-100 */
+  
+  /* Status Colors */
+  --color-todo: #3b82f6;    /* blue-500 */
+  --color-progress: #eab308; /* yellow-500 */
+  --color-done: #22c55e;    /* green-500 */
+  
+  /* Text Colors */
+  --text-primary: #000000;
+  --text-secondary: #6b7280; /* gray-500 */
+  
+  /* Spacing */
+  --spacing-base: 1.5rem;   /* 24px */
+  --spacing-sm: 1rem;       /* 16px */
+  --spacing-xs: 0.75rem;    /* 12px */
+  
+  /* Border Radius */
+  --radius-lg: 0.5rem;      /* 8px */
+  --radius-full: 9999px;
+}
+
+/* Utility Classes */
+.task-card {
+  @apply bg-gray-100 p-4 rounded-lg;
+}
+
+.task-column {
+  @apply space-y-3;
+}
+
+.task-count {
+  @apply text-sm bg-gray-100 px-2 py-1 rounded-full;
+}
+
+.tab-button {
+  @apply pb-2 px-1 transition-colors;
+}
+
+.tab-button-active {
+  @apply border-b-2 border-black text-black;
+}
+
+.tab-button-inactive {
+  @apply text-gray-500 hover:text-gray-700;
+}
+
+.stats-card {
+  @apply p-4 rounded-lg;
+}
+
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/50 flex items-center justify-center p-4;
+}
+
+.add-task-button {
+  @apply bg-black text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity;
+}

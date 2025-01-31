@@ -77,25 +77,22 @@ export default function TasksPage() {
   const doneTasks = tasks.filter(t => t.time_slot === 'done')
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header with Task Summary */}
+    <div className="p-[--spacing-base] max-w-7xl mx-auto">
+      {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Tasks</h1>
-          <button 
-            onClick={() => setIsFormOpen(true)}
-            className="bg-black text-white px-4 py-2 rounded-lg"
-          >
+          <button onClick={() => setIsFormOpen(true)} className="add-task-button">
             Add Task
           </button>
         </div>
 
-        <div className="bg-white rounded-lg p-4 shadow-sm">
+        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-100" />
+            <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
             <div>
               <h2 className="font-medium">Task Summary</h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-[--text-secondary] text-sm">
                 You have {todoTasks.length} tasks To Do and {inProgressTasks.length} tasks In Progress. Keep up the good work!
               </p>
             </div>
@@ -108,20 +105,16 @@ export default function TasksPage() {
         <div className="flex gap-6">
           <button
             onClick={() => setActiveTab('kanban')}
-            className={`pb-2 px-1 ${
-              activeTab === 'kanban'
-                ? 'border-b-2 border-black text-black'
-                : 'text-gray-500'
+            className={`tab-button ${
+              activeTab === 'kanban' ? 'tab-button-active' : 'tab-button-inactive'
             }`}
           >
             Kanban Board
           </button>
           <button
             onClick={() => setActiveTab('overview')}
-            className={`pb-2 px-1 ${
-              activeTab === 'overview'
-                ? 'border-b-2 border-black text-black'
-                : 'text-gray-500'
+            className={`tab-button ${
+              activeTab === 'overview' ? 'tab-button-active' : 'tab-button-inactive'
             }`}
           >
             Overview
@@ -129,90 +122,83 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {/* Tab Content */}
       {activeTab === 'kanban' && (
         <div className="grid grid-cols-3 gap-6">
           {/* Todo Column */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-medium">To Do</h3>
-              <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
+              <span className="task-count">
                 {todoTasks.length}
               </span>
             </div>
-            <div className="space-y-3">
-              {todoTasks.map(task => (
-                <div key={task.id} className="bg-gray-100 p-4 rounded-lg">
-                  <h4 className="font-medium">{task.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-                </div>
-              ))}
-            </div>
+            {todoTasks.map(task => (
+              <div key={task.id} className="task-card hover:bg-gray-200 transition-colors mb-3">
+                <h4 className="font-medium">{task.title}</h4>
+                <p className="text-[--text-secondary] text-sm mt-1">{task.description}</p>
+              </div>
+            ))}
           </div>
 
           {/* In Progress Column */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-medium">In Progress</h3>
-              <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
+              <span className="task-count">
                 {inProgressTasks.length}
               </span>
             </div>
-            <div className="space-y-3">
-              {inProgressTasks.map(task => (
-                <div key={task.id} className="bg-gray-100 p-4 rounded-lg">
-                  <h4 className="font-medium">{task.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-                </div>
-              ))}
-            </div>
+            {inProgressTasks.map(task => (
+              <div key={task.id} className="task-card hover:bg-gray-200 transition-colors mb-3">
+                <h4 className="font-medium">{task.title}</h4>
+                <p className="text-[--text-secondary] text-sm mt-1">{task.description}</p>
+              </div>
+            ))}
           </div>
 
           {/* Done Column */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-medium">Done</h3>
-              <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
+              <span className="task-count">
                 {doneTasks.length}
               </span>
             </div>
-            <div className="space-y-3">
-              {doneTasks.map(task => (
-                <div key={task.id} className="bg-gray-100 p-4 rounded-lg">
-                  <h4 className="font-medium">{task.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-                </div>
-              ))}
-            </div>
+            {doneTasks.map(task => (
+              <div key={task.id} className="task-card hover:bg-gray-200 transition-colors mb-3">
+                <h4 className="font-medium">{task.title}</h4>
+                <p className="text-[--text-secondary] text-sm mt-1">{task.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Statistics in 3 columns */}
           <div className="grid grid-cols-3 gap-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm text-blue-600">Total Tasks</div>
+            <div className="stats-card bg-blue-50">
+              <div className="text-[--color-todo] text-sm">Total Tasks</div>
               <div className="text-2xl font-semibold">{tasks.length}</div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm text-green-600">Completed</div>
+            <div className="stats-card bg-green-50">
+              <div className="text-[--color-done] text-sm">Completed</div>
               <div className="text-2xl font-semibold">{doneTasks.length}</div>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-sm text-yellow-600">In Progress</div>
+            <div className="stats-card bg-yellow-50">
+              <div className="text-[--color-progress] text-sm">In Progress</div>
               <div className="text-2xl font-semibold">{inProgressTasks.length}</div>
             </div>
           </div>
 
-          {/* All Tasks full width below */}
           <div>
             <h3 className="font-medium mb-4">All Tasks</h3>
             <div className="space-y-2">
               {tasks.map(task => (
-                <div key={task.id} className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
+                <div key={task.id} className="task-card flex items-center justify-between">
                   <span>{task.title}</span>
-                  <span className="text-sm text-gray-500">{task.time_slot}</span>
+                  <span className="text-[--text-secondary] text-sm">{task.time_slot}</span>
                 </div>
               ))}
             </div>
@@ -220,10 +206,10 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Task Form Modal */}
+      {/* Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="modal-backdrop">
+          <div className="bg-[--bg-card] rounded-lg w-full max-w-md">
             <TaskForm 
               onSubmit={handleCreateTask}
               onClose={() => setIsFormOpen(false)}
