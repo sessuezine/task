@@ -127,7 +127,7 @@ export default function JournalPage() {
 
       {/* Input Box */}
       <form onSubmit={handleSubmit} className="mb-8">
-        <div className="bg-[--bg-card] rounded-lg px-4 shadow-sm">
+        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
           <MoodSelector selected={mood} onSelect={setMood} />
           <textarea
             value={content}

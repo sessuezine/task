@@ -9,6 +9,7 @@ export default function HabitsPage() {
   const [habits, setHabits] = useState<Habit[]>([])
   const [contributions, setContributions] = useState<Record<string, number>>({})
   const currentYear = new Date().getFullYear()
+  const [isFormOpen, setIsFormOpen] = useState(false)
 
   useEffect(() => {
     const fetchHabits = async () => {
@@ -54,12 +55,27 @@ export default function HabitsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Habits</h1>
-        <button className="bg-black text-white px-4 py-2 rounded-lg">
-          Add Habit
-        </button>
+    <div className="p-[--spacing-base] max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold">Habits</h1>
+          <button onClick={() => setIsFormOpen(true)} className="add-task-button">
+            Add Habit
+          </button>
+        </div>
+
+        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
+            <div>
+              <h2 className="font-medium">Habit Summary</h2>
+              <p className="text-[--text-secondary] text-sm">
+                You have {habits.length} active habits. Keep up the good work!
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Contribution Grid */}
