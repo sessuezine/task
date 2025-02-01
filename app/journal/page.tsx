@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { MoodSelector, moods } from '@/components/MoodSelector'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface JournalEntry {
   id: string
@@ -143,92 +144,80 @@ export default function JournalPage() {
 
   return (
     <div className="p-[--spacing-base] max-w-7xl mx-auto">
-      {/* Header with Summary */}
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Journal</h1>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-[--bg-card] border-none rounded-lg px-3 py-2 w-[180px] h-[40px]"
-          >
-            {availableMonths.map(month => {
-              const [year, monthNum] = month.split('-')
-              const date = new Date(+year, +monthNum - 1)
-              return (
-                <option key={month} value={month}>
-                  {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                </option>
-              )
-            })}
-          </select>
-        </div>
+        <h1 className="text-2xl font-semibold mb-6">Journal</h1>
+        
+        <Tabs defaultValue="posts">
+          <TabsList className="mb-6">
+            <TabsTrigger value="posts">Quick Post</TabsTrigger>
+            <TabsTrigger value="entries">Private Entries</TabsTrigger>
+          </TabsList>
 
-        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
-          <div>
-            <h2 className="font-medium">Journal Summary</h2>
-            <p className="text-[--text-secondary] text-sm">
-              You&apos;ve written {entries.length} entries this month. Most common mood: {getMostCommonMood(entries)}
-            </p>
-          </div>
-        </div>
-      </div>
+          <TabsContent value="posts">
+            {/* Simple post interface */}
+            <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
+              <MoodSelector selected={mood} onSelect={setMood} />
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && mood) {
+                    e.preventDefault()
+                    handleSubmit(e)
+                  }
+                }}
+                placeholder="What's on your mind?"
+                className="w-full bg-transparent border-none focus:ring-0 resize-none"
+                rows={3}
+              />
+              {!mood && content && (
+                <p className="text-amber-500 text-sm mt-2">Please select a mood before submitting</p>
+              )}
+            </div>
 
-      {/* Input Box */}
-      <form onSubmit={handleSubmit} className="mb-8">
-        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
-          <MoodSelector selected={mood} onSelect={setMood} />
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && mood) {
-                e.preventDefault()
-                handleSubmit(e)
-              }
-            }}
-            placeholder="What's on your mind?"
-            className="w-full bg-transparent border-none focus:ring-0 resize-none"
-            rows={3}
-          />
-          {!mood && content && (
-            <p className="text-amber-500 text-sm mt-2">Please select a mood before submitting</p>
-          )}
-        </div>
-      </form>
-
-      {/* Entries by Day */}
-      <div className="space-y-8">
-        {groupEntriesByDay().map(([date, dayEntries]) => (
-          <div key={date}>
-            <h3 className="text-lg font-medium mb-4">{formatDate(date)}</h3>
-            <div className="space-y-4">
-              {dayEntries.map(entry => (
-                <div key={entry.id} className="bg-[--bg-card] p-4 rounded-lg shadow-sm">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl" title={entry.mood}>
-                        {moods.find(m => m.value === entry.mood)?.emoji}
-                      </span>
-                      <p className="whitespace-pre-wrap">{entry.content}</p>
-                    </div>
-                    <span className="text-[--text-secondary] text-sm">
-                      {new Date(entry.created_at).toLocaleTimeString()}
-                    </span>
+            {/* Posts List */}
+            <div className="space-y-8 mt-8">
+              {groupEntriesByDay().map(([date, dayEntries]) => (
+                <div key={date}>
+                  <h3 className="text-lg font-medium mb-4">{formatDate(date)}</h3>
+                  <div className="space-y-4">
+                    {dayEntries.map(entry => (
+                      <div key={entry.id} className="bg-[--bg-card] p-4 rounded-lg shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl" title={entry.mood}>
+                              {moods.find(m => m.value === entry.mood)?.emoji}
+                            </span>
+                            <p className="whitespace-pre-wrap">{entry.content}</p>
+                          </div>
+                          <span className="text-[--text-secondary] text-sm">
+                            {new Date(entry.created_at).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        {entry.ai_summary && (
+                          <div className="mt-4 p-3 bg-[--bg-task] rounded-md">
+                            <p className="text-sm text-[--text-secondary]">
+                              AI Summary: {entry.ai_summary}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  {entry.ai_summary && (
-                    <div className="mt-4 p-3 bg-[--bg-task] rounded-md">
-                      <p className="text-sm text-[--text-secondary]">
-                        AI Summary: {entry.ai_summary}
-                      </p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
-          </div>
-        ))}
+          </TabsContent>
+
+          <TabsContent value="entries">
+            <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
+              <h2 className="font-medium mb-4">Private Journal Entries</h2>
+              <p className="text-[--text-secondary]">
+                Your private space for deeper reflection. Password protected. Coming soon!
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

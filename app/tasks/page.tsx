@@ -13,6 +13,7 @@ import {
 import { Task, NewTask } from '@/src/lib/types'
 import TaskForm from '@/components/TaskForm'
 import { KanbanColumn } from '@/components/KanbanColumn'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface Habit {
   id: string;
@@ -145,35 +146,13 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex gap-6">
-          <button
-            onClick={() => setActiveTab('kanban')}
-            className={`tab-button ${
-              activeTab === 'kanban' ? 'tab-button-active' : 'tab-button-inactive'
-            }`}
-          >
-            Kanban Board
-          </button>
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`tab-button ${
-              activeTab === 'overview' ? 'tab-button-active' : 'tab-button-inactive'
-            }`}
-          >
-            Overview
-          </button>
-        </div>
-      </div>
+      <Tabs defaultValue="overview">
+        <TabsList className="mb-6">
+          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+        </TabsList>
 
-      {activeTab === 'kanban' && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
+        <TabsContent value="kanban">
           <div className="grid grid-cols-3 gap-6">
             <KanbanColumn
               title="To Do"
@@ -194,8 +173,48 @@ export default function TasksPage() {
               fetchTasks={fetchTasks}
             />
           </div>
-        </DndContext>
-      )}
+        </TabsContent>
+
+        <TabsContent value="overview">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="text-sm text-blue-600 mb-2">Total Tasks</h3>
+              <p className="text-2xl font-semibold">{tasks.length}</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="text-sm text-green-600 mb-2">Completed</h3>
+              <p className="text-2xl font-semibold">
+                {tasks.filter(t => t.time_slot === 'done').length}
+              </p>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <h3 className="text-sm text-yellow-600 mb-2">In Progress</h3>
+              <p className="text-2xl font-semibold">
+                {tasks.filter(t => t.time_slot === 'in progress').length}
+              </p>
+            </div>
+          </div>
+
+          {/* Task List */}
+          <div>
+            <h3 className="font-medium mb-4">All Tasks</h3>
+            <div className="space-y-2">
+              {tasks.map(task => (
+                <div 
+                  key={task.id} 
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition-colors"
+                >
+                  <span>{task.title}</span>
+                  <span className="text-sm text-[--text-secondary] capitalize">
+                    {task.time_slot.replace('_', ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Modal */}
       {isFormOpen && (
