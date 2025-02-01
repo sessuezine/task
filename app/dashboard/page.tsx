@@ -1,12 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import type { Value } from 'react-calendar/dist/cjs/shared/types';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import type { Habit } from '@/src/lib/types'
 
 export default function DashboardPage() {
+  const supabase = createClientComponentClient()
   const [date, setDate] = useState<Value>(new Date());
+  const [habits, setHabits] = useState<Habit[]>([]);
+
+  useEffect(() => {
+    const fetchHabits = async () => {
+      const { data } = await supabase
+        .from('habits')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (data) setHabits(data)
+    }
+
+    fetchHabits()
+  }, [supabase])
 
   return (
     <div className="py-6">
@@ -113,6 +130,48 @@ export default function DashboardPage() {
               <div>
                 <div className="font-medium">New Task: API Integration</div>
                 <div className="text-sm text-gray-500">5 hours ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        {/* Habit Streaks */}
+        <div className="bg-[--bg-card] p-6 rounded-lg">
+          <h2 className="text-lg font-semibold mb-4">Habit Streaks</h2>
+          <div className="space-y-4">
+            {habits.map(habit => (
+              <div key={habit.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-8 bg-blue-500 rounded-full" />
+                  <div>
+                    <h3 className="font-medium">{habit.title}</h3>
+                    <p className="text-sm text-[--text-secondary]">
+                      {habit.current_streak} day streak
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {/* Mini contribution graph */}
+                  {[...Array(7)].map((_, i) => (
+                    <div key={i} className="w-3 h-3 rounded-sm bg-[--bg-task]" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Virtual Pet Status */}
+        <div className="bg-[--bg-card] p-6 rounded-lg">
+          <h2 className="text-lg font-semibold mb-4">Your Companion</h2>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-[--bg-task]" /> {/* Pet avatar */}
+            <div>
+              <h3 className="font-medium">Pet Name</h3>
+              <div className="mt-2 w-full bg-[--bg-task] rounded-full h-2">
+                <div className="bg-blue-500 h-2 rounded-full w-3/4" /> {/* XP bar */}
               </div>
             </div>
           </div>

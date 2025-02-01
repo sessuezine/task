@@ -13,7 +13,9 @@ export default function TaskForm({ onSubmit, onClose }: TaskFormProps) {
     title: '',
     description: '',
     time_slot: 'todo',
-    deadline: undefined
+    deadline: undefined,
+    type: 'task',
+    tags: []
   })
 
   const handleSubmit = async (e: React.FormEvent) => {

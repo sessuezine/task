@@ -60,6 +60,18 @@ export default function Nav({ isOpen, setIsOpen }: NavProps) {
           Tasks
         </Link>
         <Link 
+          href="/habits"
+          className={`flex items-center px-3 py-2 rounded-lg ${
+            pathname === '/habits' ? 'bg-gray-100 text-black' : 'text-gray-600 hover:bg-gray-50'
+          }`}
+          onClick={() => setIsOpen(false)}
+        >
+          <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Habits
+        </Link>
+        <Link 
           href="/journal"
           className={`flex items-center px-3 py-2 rounded-lg ${
             pathname === '/journal' ? 'bg-gray-100 text-black' : 'text-gray-600 hover:bg-gray-50'
