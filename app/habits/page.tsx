@@ -2,15 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Habit } from '@/src/lib/types'
+import type { Habit, HabitFormData } from '@/src/lib/types'
 import { HabitForm } from '@/components/HabitForm'
-
-interface HabitFormData {
-  title: string;
-  description?: string;
-  checklist: { id: string; title: string; completed: boolean; }[];
-  frequency: 'daily' | 'weekly' | 'monthly';
-}
 
 export default function HabitsPage() {
   const supabase = createClientComponentClient()
@@ -68,6 +61,7 @@ export default function HabitsPage() {
       .insert([{
         ...data,
         user_id: (await supabase.auth.getUser()).data.user?.id,
+        status: 'active',
         created_at: new Date().toISOString(),
       }])
       .select()
@@ -164,27 +158,48 @@ export default function HabitsPage() {
       </div>
 
       {/* Active Habits */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {habits.map(habit => (
-          <div key={habit.id} className="bg-[--bg-card] p-6 rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium">{habit.title}</h3>
-              <span className="text-sm bg-[--bg-task] px-3 py-1 rounded-full">
-                {habit.frequency}
-              </span>
-            </div>
-            <p className="text-sm text-[--text-secondary] mb-4">
-              {habit.description}
-            </p>
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-medium">Current Streak</p>
-                <p className="text-2xl font-bold">{habit.current_streak} days</p>
+          <div key={habit.id} className="bg-[--bg-card] p-4 rounded-lg">
+            <h3 className="font-medium">{habit.title}</h3>
+            {habit.description && (
+              <p className="text-[--text-secondary] text-sm mt-1">{habit.description}</p>
+            )}
+            <div className="mt-3">
+              <div className="text-sm text-[--text-secondary]">
+                Schedule: {habit.schedule.type === 'daily' ? 'Daily' : habit.schedule.type === 'weekly' ? 'Weekly' : 'Monthly'}
               </div>
-              <button className="bg-[--bg-task] px-4 py-2 rounded-lg">
-                Complete
-              </button>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {habit.schedule.type === 'daily' ? (
+                  <span className="px-2 py-1 bg-[--bg-task] rounded-full text-xs">Every day</span>
+                ) : habit.schedule.type === 'weekly' ? (
+                  habit.schedule.days.map(day => (
+                    <span key={day} className="px-2 py-1 bg-[--bg-task] rounded-full text-xs">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]}
+                    </span>
+                  ))
+                ) : (
+                  habit.schedule.days.map(day => (
+                    <span key={day} className="px-2 py-1 bg-[--bg-task] rounded-full text-xs">
+                      Day {day}
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
+            {habit.checklist.length > 0 && (
+              <div className="mt-3">
+                <div className="text-sm text-[--text-secondary] mb-2">Checklist:</div>
+                <div className="space-y-1">
+                  {habit.checklist.map(item => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <input type="checkbox" className="form-checkbox" />
+                      <span className="text-sm">{item.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

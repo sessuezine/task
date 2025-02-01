@@ -8,14 +8,37 @@ import {
   useSensors,
   useSensor,
   PointerSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCorners,
-  defaultDropAnimationSideEffects
+  closestCorners
 } from '@dnd-kit/core'
 import { Task, NewTask } from '@/src/lib/types'
 import TaskForm from '@/components/TaskForm'
-import { KanbanColumn } from '../../components/KanbanColumn'
+import { KanbanColumn } from '@/components/KanbanColumn'
+
+interface Habit {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  days_of_week?: number[];    // e.g., [1,3,5] for Mon,Wed,Fri
+  time_of_day?: string;       // Optional reminder time
+  checklist: {
+    id: string;
+    title: string;
+  }[];
+  category?: string;
+  status: 'active' | 'archived';
+}
+
+interface HabitCompletion {
+  id: string;
+  habit_id: string;
+  user_id: string;
+  completed_at: Date;
+  completion_value: number;    // How many items completed
+  completed_items: string[];   // IDs of completed checklist items
+  notes?: string;
+}
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -34,20 +57,6 @@ export default function TasksPage() {
 
   useEffect(() => {
     fetchTasks()
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('Session:', session)
-      if (!session) {
-        // Redirect to login if not authenticated
-        window.location.href = '/login'
-      }
-    }
-    checkAuth()
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      console.log('Current user ID:', user?.id)
-    }
-    checkUser()
   }, [])
 
   const fetchTasks = async () => {
@@ -58,49 +67,13 @@ export default function TasksPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      if (data) {
-        console.log('Fetched tasks:', data)
-        console.log('Task time_slots:', data.map(t => t.time_slot))
-        setTasks(data)
-      }
+      if (data) setTasks(data)
     } catch (error) {
       console.error('Error fetching tasks:', error)
     }
   }
 
-  const handleCreateTask = async (newTask: NewTask) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      console.log('Current user:', user)
-      
-      const taskWithUser = {
-        ...newTask,
-        user_id: user?.id
-      }
-      console.log('Attempting to create task:', taskWithUser)
-      
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert([taskWithUser])
-        .select()
-        .single()
-
-      console.log('Response:', { data, error })
-      
-      if (error) throw error
-      if (data) {
-        await fetchTasks()
-        setIsFormOpen(false)
-      }
-    } catch (error) {
-      console.error('Error creating task:', error)
-    }
-  }
-
-  const todoTasks = tasks.filter(t => {
-    console.log('Checking task:', t.title, 'time_slot:', t.time_slot)
-    return t.time_slot === 'todo'
-  })
+  const todoTasks = tasks.filter(t => t.time_slot === 'todo')
   const inProgressTasks = tasks.filter(t => t.time_slot === 'in_progress')
   const doneTasks = tasks.filter(t => t.time_slot === 'done')
 
@@ -111,21 +84,41 @@ export default function TasksPage() {
   const handleDragEnd = async (event: any) => {
     const { active, over } = event
 
-    if (!over || !active) return
+    if (!over) return
 
-    const validStatuses = ['todo', 'in_progress', 'done']
-    if (!validStatuses.includes(over.id)) return
+    const activeTask = tasks.find(task => task.id === active.id)
+    const newStatus = over.id
 
-    try {
-      await supabase
-        .from('tasks')
-        .update({ time_slot: over.id })
-        .eq('id', active.id)
-      
-      fetchTasks()
-    } catch (error) {
-      console.error('Error updating task:', error)
+    if (activeTask && activeTask.time_slot !== newStatus) {
+      try {
+        await supabase
+          .from('tasks')
+          .update({ time_slot: newStatus })
+          .eq('id', active.id)
+        
+        fetchTasks()
+      } catch (error) {
+        console.error('Error updating task:', error)
+      }
     }
+
+    setActiveId(null)
+  }
+
+  const handleCreateTask = async (newTask: NewTask) => {
+    const { error } = await supabase
+      .from('tasks')
+      .insert([{
+        ...newTask,
+        user_id: (await supabase.auth.getUser()).data.user?.id
+      }])
+
+    if (error) {
+      console.error('Error creating task:', error)
+      return
+    }
+
+    fetchTasks()
   }
 
   return (
@@ -174,7 +167,6 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'kanban' && (
         <DndContext
           sensors={sensors}
@@ -187,71 +179,22 @@ export default function TasksPage() {
               title="To Do"
               tasks={todoTasks}
               id="todo"
+              fetchTasks={fetchTasks}
             />
             <KanbanColumn
               title="In Progress"
               tasks={inProgressTasks}
               id="in_progress"
+              fetchTasks={fetchTasks}
             />
             <KanbanColumn
               title="Done"
               tasks={doneTasks}
               id="done"
+              fetchTasks={fetchTasks}
             />
           </div>
-          
-          <DragOverlay dropAnimation={{
-            sideEffects: defaultDropAnimationSideEffects({
-              styles: {
-                active: {
-                  opacity: '0.5',
-                },
-              },
-            }),
-          }}>
-            {activeId ? (
-              <div className="task-card cursor-grabbing">
-                <h4 className="font-medium">
-                  {tasks.find(task => task.id === activeId)?.title}
-                </h4>
-                <p className="text-[--text-secondary] text-sm mt-1">
-                  {tasks.find(task => task.id === activeId)?.description}
-                </p>
-              </div>
-            ) : null}
-          </DragOverlay>
         </DndContext>
-      )}
-
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-6">
-            <div className="stats-card bg-blue-50">
-              <div className="text-[--color-todo] text-sm">Total Tasks</div>
-              <div className="text-2xl font-semibold">{tasks.length}</div>
-            </div>
-            <div className="stats-card bg-green-50">
-              <div className="text-[--color-done] text-sm">Completed</div>
-              <div className="text-2xl font-semibold">{doneTasks.length}</div>
-            </div>
-            <div className="stats-card bg-yellow-50">
-              <div className="text-[--color-progress] text-sm">In Progress</div>
-              <div className="text-2xl font-semibold">{inProgressTasks.length}</div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-medium mb-4">All Tasks</h3>
-            <div className="space-y-2">
-              {tasks.map(task => (
-                <div key={task.id} className="task-card flex items-center justify-between">
-                  <span>{task.title}</span>
-                  <span className="text-[--text-secondary] text-sm">{task.time_slot}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Modal */}

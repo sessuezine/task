@@ -6,9 +6,10 @@ interface KanbanColumnProps {
   title: string
   tasks: Task[]
   id: string
+  fetchTasks: () => void
 }
 
-export function KanbanColumn({ title, tasks, id }: KanbanColumnProps) {
+export function KanbanColumn({ title, tasks, id, fetchTasks }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
     id,
   })
@@ -21,7 +22,7 @@ export function KanbanColumn({ title, tasks, id }: KanbanColumnProps) {
       </div>
       <div ref={setNodeRef} className="space-y-3 min-h-[50px]">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard key={task.id} task={task} onDelete={() => fetchTasks()} />
         ))}
       </div>
     </div>

@@ -4,13 +4,28 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface TaskCardProps {
   task: Task
+  onDelete?: () => void
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onDelete }: TaskCardProps) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: task.id,
   })
   const supabase = createClientComponentClient()
+
+  const handleDelete = async () => {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .match({ id: task.id })
+    
+    if (error) {
+      console.error('Error deleting task:', error)
+      return
+    }
+
+    onDelete?.()
+  }
 
   return (
     <div
@@ -20,11 +35,7 @@ export function TaskCard({ task }: TaskCardProps) {
       className="task-card group relative cursor-grab active:cursor-grabbing transform transition-all duration-200 ease-in-out"
     >
       <button 
-        onClick={async () => {
-          await supabase.from('tasks').delete().match({ id: task.id })
-          // You'll need to implement a way to refresh tasks after deletion
-          // This could be through a callback prop or global state management
-        }}
+        onClick={handleDelete}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
       >
         <svg className="w-5 h-5 text-gray-500 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

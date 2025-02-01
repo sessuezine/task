@@ -34,13 +34,16 @@ export interface Habit {
   user_id: string;
   title: string;
   description?: string;
-  frequency: 'daily' | 'weekly' | 'monthly';
-  days_of_week?: number[];
-  time_of_day?: string;
+  schedule: {
+    type: 'daily' | 'weekly' | 'monthly';
+    days: number[];      // Empty for daily, 0-6 for weekly, 1-31 for monthly
+  };
+  checklist: {
+    id: string;
+    title: string;
+  }[];
   category?: string;
   tags: string[];
-  current_streak: number;
-  longest_streak: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -96,4 +99,14 @@ async function findOptimalTime(request: ScheduleRequest) {
   // 3. Look at habit completion patterns
   // 4. Suggest best time slot
   // 5. Handle conflicts
+}
+
+export interface HabitFormData {
+  title: string;
+  description?: string;
+  schedule: {
+    type: 'daily' | 'weekly' | 'monthly';
+    days: number[];
+  };
+  checklist: { id: string; title: string; }[];
 }
