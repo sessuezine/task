@@ -18,16 +18,16 @@ export type NewTask = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>
 
 export interface JournalEntry {
   id: string;
+  user_id: string;
   content: string;
-  userId: string;
-  date: Date;
-  aiSummary?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  mood: string;
   ai_summary?: string;
-  tags: string[];
+  created_at: string;
+  updated_at?: string;
+  mood: string;
+  tags?: string;
 }
+
+export type NewJournalEntry = Omit<JournalEntry, 'id' | 'created_at' | 'updated_at' | 'ai_summary'>;
 
 export interface Habit {
   id: string;

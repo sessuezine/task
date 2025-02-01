@@ -1,3 +1,5 @@
+'use client'
+
 interface MoodOption {
   emoji: string;
   label: string;
@@ -5,11 +7,11 @@ interface MoodOption {
 }
 
 export const moods = [
-  { emoji: "😊", label: "Happy", value: "happy" },
-  { emoji: "😌", label: "Content", value: "content" },
-  { emoji: "😐", label: "Neutral", value: "neutral" },
-  { emoji: "😕", label: "Ambivalent", value: "ambivalent" },
-  { emoji: "😢", label: "Sad", value: "sad" },
+  { value: 'happy', emoji: '😊' },
+  { value: 'relaxed', emoji: '😌' },
+  { value: 'neutral', emoji: '😐' },
+  { value: 'sad', emoji: '😔' },
+  { value: 'worried', emoji: '😟' },
 ] as const;
 
 interface MoodSelectorProps {
@@ -20,16 +22,16 @@ interface MoodSelectorProps {
 export function MoodSelector({ selected, onSelect }: MoodSelectorProps) {
   return (
     <div className="flex gap-2 mb-3">
-      {moods.map((mood) => (
+      {moods.map(mood => (
         <button
           key={mood.value}
+          type="button"
           onClick={() => onSelect(mood.value)}
-          className={`p-2 rounded-lg hover:bg-[--bg-task] transition-colors ${
-            selected === mood.value ? 'bg-[--bg-task]' : ''
-          }`}
-          title={mood.label}
+          className={`text-2xl p-2 rounded-full hover:bg-[--bg-task] transition-colors
+            ${selected === mood.value ? 'bg-[--bg-task]' : ''}`}
+          title={mood.value}
         >
-          <span className="text-2xl">{mood.emoji}</span>
+          {mood.emoji}
         </button>
       ))}
     </div>

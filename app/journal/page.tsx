@@ -26,17 +26,25 @@ export default function JournalPage() {
   const fetchEntries = useCallback(async () => {
     try {
       const [year, month] = selectedMonth.split('-')
-      const startDate = new Date(+year, +month - 1, 1).toISOString()
-      const endDate = new Date(+year, +month, 0).toISOString()
+      const startDate = new Date(+year, +month - 1, 1)
+      const endDate = new Date(+year, +month + 1, 0)
+      
+      console.log('Date range:', {
+        selectedMonth,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        currentDate: new Date().toISOString()
+      })
 
       const { data, error } = await supabase
         .from('journal_entries')
         .select('*')
-        .gte('created_at', startDate)
-        .lte('created_at', endDate)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false })
 
       if (error) throw error
+      console.log('Fetched entries:', data)
       if (data) setEntries(data)
     } catch (error) {
       console.error('Error fetching entries:', error)
@@ -59,23 +67,34 @@ export default function JournalPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!content.trim()) return
+    if (!content.trim() || !mood) return
 
     try {
-      const { error } = await supabase
-        .from('journal_entries')
-        .insert([
-          {
-            content: content.trim(),
-            mood: mood || '',
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          }
-        ])
+      const user = await supabase.auth.getUser()
+      console.log('Current user:', user)
 
-      if (error) throw error
+      const newEntry = {
+        content: content.trim(),
+        mood,
+        user_id: user.data.user?.id,
+        tags: []
+      }
+      console.log('Attempting to insert:', newEntry)
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .insert(newEntry)
+        .select()
+
+      if (error) {
+        console.error('Error details:', error)
+        throw error
+      }
       
+      console.log('Inserted entry:', data)
       setContent('')
-      fetchEntries()
+      setMood(null)
+      await fetchEntries()
     } catch (error) {
       console.error('Error creating entry:', error)
     }
@@ -133,7 +152,7 @@ export default function JournalPage() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && mood) {
                 e.preventDefault()
                 handleSubmit(e)
               }
