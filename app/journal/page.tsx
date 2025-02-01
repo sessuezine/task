@@ -22,6 +22,7 @@ export default function JournalPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
   const [availableMonths, setAvailableMonths] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
 
   const supabase = createClientComponentClient()
 
@@ -65,19 +66,22 @@ export default function JournalPage() {
       .order('created_at', { ascending: false })
 
     const months = new Set<string>()
-    // Always add current month
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth() + 1
-    months.add(`${currentYear}-${String(currentMonth).padStart(2, '0')}`)
     
-    // Add months with entries
-    data?.forEach(entry => {
-      const date = new Date(entry.created_at)
-      months.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
+    // Always add current month (February 2025)
+    const now = new Date()
+    months.add(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
+    
+    // Add January 2025 (previous month)
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1)
+    months.add(`${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`)
+
+    const sortedMonths = Array.from(months).sort((a, b) => {
+      const [yearA, monthA] = a.split('-').map(Number)
+      const [yearB, monthB] = b.split('-').map(Number)
+      if (yearA !== yearB) return yearB - yearA
+      return monthB - monthA
     })
 
-    const sortedMonths = Array.from(months).sort().reverse()
     setAvailableMonths(sortedMonths)
     return sortedMonths
   }, [supabase])
@@ -92,6 +96,11 @@ export default function JournalPage() {
     }
     initializeMonth()
   }, [fetchAvailableMonths])
+
+  // Fetch entries when month changes
+  useEffect(() => {
+    fetchEntries()
+  }, [selectedMonth, fetchEntries])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -145,12 +154,19 @@ export default function JournalPage() {
   return (
     <div className="p-[--spacing-base] max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold mb-6">Journal</h1>
-        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold">Journal</h1>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[--text-secondary]">
+              {entries.length} entries
+            </span>
+          </div>
+        </div>
+
         <Tabs defaultValue="posts">
           <TabsList className="mb-6">
-            <TabsTrigger value="posts">Quick Post</TabsTrigger>
-            <TabsTrigger value="entries">Private Entries</TabsTrigger>
+            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="entries">Entries ({entries.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts">
@@ -170,51 +186,83 @@ export default function JournalPage() {
                 className="w-full bg-transparent border-none focus:ring-0 resize-none"
                 rows={3}
               />
-              {!mood && content && (
-                <p className="text-amber-500 text-sm mt-2">Please select a mood before submitting</p>
-              )}
-            </div>
-
-            {/* Posts List */}
-            <div className="space-y-8 mt-8">
-              {groupEntriesByDay().map(([date, dayEntries]) => (
-                <div key={date}>
-                  <h3 className="text-lg font-medium mb-4">{formatDate(date)}</h3>
-                  <div className="space-y-4">
-                    {dayEntries.map(entry => (
-                      <div key={entry.id} className="bg-[--bg-card] p-4 rounded-lg shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl" title={entry.mood}>
-                              {moods.find(m => m.value === entry.mood)?.emoji}
-                            </span>
-                            <p className="whitespace-pre-wrap">{entry.content}</p>
-                          </div>
-                          <span className="text-[--text-secondary] text-sm">
-                            {new Date(entry.created_at).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        {entry.ai_summary && (
-                          <div className="mt-4 p-3 bg-[--bg-task] rounded-md">
-                            <p className="text-sm text-[--text-secondary]">
-                              AI Summary: {entry.ai_summary}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
             </div>
           </TabsContent>
 
           <TabsContent value="entries">
-            <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
-              <h2 className="font-medium mb-4">Private Journal Entries</h2>
-              <p className="text-[--text-secondary]">
-                Your private space for deeper reflection. Password protected. Coming soon!
-              </p>
+            {/* Search and filter controls */}
+            <div className="flex justify-between items-center mb-8 gap-4">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search entries..."
+                  className="w-full bg-[--bg-card] border-none rounded-lg px-3 py-2 pl-10"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-secondary]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-[--bg-card] border-none rounded-lg px-3 py-2 w-[180px]"
+              >
+                {availableMonths.map(month => {
+                  const [year, monthNum] = month.split('-')
+                  const date = new Date(+year, +monthNum - 1)
+                  return (
+                    <option key={month} value={month}>
+                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+
+            {/* Entries list */}
+            <div className="space-y-8">
+              {groupEntriesByDay()
+                .filter(([_, entries]) => 
+                  !searchQuery || entries.some(entry => 
+                    entry.content.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                )
+                .map(([date, dayEntries]) => (
+                  <div key={date}>
+                    <h3 className="text-lg font-medium mb-4">{formatDate(date)}</h3>
+                    <div className="space-y-4">
+                      {dayEntries.map(entry => (
+                        <div key={entry.id} className="bg-[--bg-card] p-4 rounded-lg shadow-sm">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl" title={entry.mood}>
+                                {moods.find(m => m.value === entry.mood)?.emoji}
+                              </span>
+                              <p className="whitespace-pre-wrap">{entry.content}</p>
+                            </div>
+                            <span className="text-[--text-secondary] text-sm">
+                              {new Date(entry.created_at).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          {entry.ai_summary && (
+                            <div className="mt-4 p-3 bg-[--bg-task] rounded-md">
+                              <p className="text-sm text-[--text-secondary]">
+                                AI Summary: {entry.ai_summary}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
             </div>
           </TabsContent>
         </Tabs>
