@@ -20,7 +20,17 @@ export default function TaskForm({ onSubmit, onClose }: TaskFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await onSubmit(task)
+    
+    const newTask = {
+      title: task.title,
+      description: task.description,
+      time_slot: 'todo' as const,
+      deadline: task.deadline,
+      type: 'task' as const,  // Specify literal type
+      tags: []
+    }
+
+    await onSubmit(newTask)
     onClose()
   }
 

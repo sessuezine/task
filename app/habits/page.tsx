@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Habit } from '@/src/lib/types'
+import { HabitForm } from '@/components/HabitForm'
+
+interface HabitFormData {
+  title: string;
+  description?: string;
+  checklist: { id: string; title: string; completed: boolean; }[];
+  frequency: 'daily' | 'weekly' | 'monthly';
+}
 
 export default function HabitsPage() {
   const supabase = createClientComponentClient()
@@ -54,6 +62,26 @@ export default function HabitsPage() {
     return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
   }
 
+  const handleCreateHabit = async (data: HabitFormData) => {
+    const { data: habit, error } = await supabase
+      .from('habits')
+      .insert([{
+        ...data,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        created_at: new Date().toISOString(),
+      }])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating habit:', error)
+      return
+    }
+
+    setHabits(prev => [habit, ...prev])
+    setIsFormOpen(false)
+  }
+
   return (
     <div className="p-[--spacing-base] max-w-7xl mx-auto">
       {/* Header */}
@@ -79,7 +107,7 @@ export default function HabitsPage() {
       </div>
 
       {/* Contribution Grid */}
-      <div className="bg-[--bg-card] p-6 rounded-lg mb-8">
+      <div className="bg-[--bg-card] rounded-lg mb-8">
         <h2 className="text-lg font-semibold mb-4">Your Progress</h2>
         
         {/* Month labels */}
@@ -160,6 +188,13 @@ export default function HabitsPage() {
           </div>
         ))}
       </div>
+
+      {isFormOpen && (
+        <HabitForm
+          onSubmit={handleCreateHabit}
+          onClose={() => setIsFormOpen(false)}
+        />
+      )}
     </div>
   )
 } 
