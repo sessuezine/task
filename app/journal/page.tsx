@@ -20,6 +20,7 @@ export default function JournalPage() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
+  const [availableMonths, setAvailableMonths] = useState<string[]>([])
 
   const supabase = createClientComponentClient()
 
@@ -27,7 +28,7 @@ export default function JournalPage() {
     try {
       const [year, month] = selectedMonth.split('-')
       const startDate = new Date(+year, +month - 1, 1)
-      const endDate = new Date(+year, +month + 1, 0)
+      const endDate = new Date(+year, +month, 0, 23, 59, 59, 999)
       
       console.log('Date range:', {
         selectedMonth,
@@ -55,15 +56,41 @@ export default function JournalPage() {
     fetchEntries()
   }, [fetchEntries])
 
-  // Get unique months from entries for the dropdown
-  const getAvailableMonths = () => {
+  // Get all available months with entries
+  const fetchAvailableMonths = useCallback(async () => {
+    const { data } = await supabase
+      .from('journal_entries')
+      .select('created_at')
+      .order('created_at', { ascending: false })
+
     const months = new Set<string>()
-    entries.forEach(entry => {
+    // Always add current month
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
+    months.add(`${currentYear}-${String(currentMonth).padStart(2, '0')}`)
+    
+    // Add months with entries
+    data?.forEach(entry => {
       const date = new Date(entry.created_at)
       months.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
     })
-    return Array.from(months).sort().reverse()
-  }
+
+    const sortedMonths = Array.from(months).sort().reverse()
+    setAvailableMonths(sortedMonths)
+    return sortedMonths
+  }, [supabase])
+
+  // Update initial state
+  useEffect(() => {
+    const initializeMonth = async () => {
+      const months = await fetchAvailableMonths()
+      if (months.length > 0) {
+        setSelectedMonth(months[0])
+      }
+    }
+    initializeMonth()
+  }, [fetchAvailableMonths])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -125,11 +152,15 @@ export default function JournalPage() {
             onChange={(e) => setSelectedMonth(e.target.value)}
             className="bg-[--bg-card] border-none rounded-lg px-3 py-2 w-[180px] h-[40px]"
           >
-            {getAvailableMonths().map(month => (
-              <option key={month} value={month}>
-                {new Date(month).toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </option>
-            ))}
+            {availableMonths.map(month => {
+              const [year, monthNum] = month.split('-')
+              const date = new Date(+year, +monthNum - 1)
+              return (
+                <option key={month} value={month}>
+                  {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </option>
+              )
+            })}
           </select>
         </div>
 
