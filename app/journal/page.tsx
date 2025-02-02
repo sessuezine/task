@@ -219,228 +219,222 @@ export default function JournalPage() {
 
   return (
     <div className="p-[--spacing-base] max-w-7xl mx-auto">
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Journal</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-[--text-secondary]">
-              {entries.length} entries
-            </span>
+      <div className="bg-[--bg-card] rounded-lg flex justify-between items-center h-10 mb-6">
+        <h1 className="text-2xl font-semibold">Journal</h1>
+        <span className="text-[--text-secondary]">{entries.length} entries</span>
+      </div>
+
+      <Tabs defaultValue="entries">
+        <TabsList>
+          <TabsTrigger value="posts">Posts</TabsTrigger>
+          <TabsTrigger value="entries">Entries ({entries.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="posts">
+          <div className="bg-[--bg-card] rounded-lg shadow-sm">
+            {/* Tags input */}
+            <div className="flex justify-end mb-4">
+              <div className="relative w-[200px]">
+                <input
+                  type="text"
+                  placeholder="Add tags..."
+                  className="w-full bg-transparent border rounded-lg px-3 py-1"
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && currentTag.trim()) {
+                      setTags([...tags, currentTag.trim()])
+                      setCurrentTag('')
+                    }
+                  }}
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tags.map(tag => (
+                    <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-sm">
+                      {tag} ×
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <MoodSelector selected={mood} onSelect={setMood} />
+            
+            {/* Updated text area with border and padding */}
+            <div className="mt-4 border rounded-lg">
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.shiftKey && mood) {
+                    e.preventDefault()
+                    handleSubmit(e)
+                  }
+                }}
+                placeholder="What's on your mind? Feel free to write as much as you'd like... (Shift+Enter to post)"
+                className="w-full bg-transparent border-none focus:ring-0 resize-none p-4"
+                rows={8}
+              />
+            </div>
           </div>
-        </div>
+        </TabsContent>
 
-        <Tabs defaultValue="posts">
-          <TabsList className="mb-6">
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="entries">Entries ({entries.length})</TabsTrigger>
-          </TabsList>
+        <TabsContent value="entries">
+          {/* Search and filter controls */}
+          <div className="flex justify-between items-center gap-4 mb-8">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Search entries..."
+                className="w-full bg-[--bg-card] border-none rounded-lg px-3 py-2 pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+              />
+            </div>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-[--bg-card] border-none rounded-lg px-3 py-2 w-[180px]"
+            >
+              {availableMonths.map(month => {
+                const [year, monthNum] = month.split('-')
+                const date = new Date(+year, +monthNum - 1)
+                return (
+                  <option key={month} value={month}>
+                    {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </option>
+                )
+              })}
+            </select>
+          </div>
 
-          <TabsContent value="posts">
-            <div className="bg-[--bg-card] rounded-lg shadow-sm">
-              {/* Tags input */}
-              <div className="flex justify-end mb-4">
-                <div className="relative w-[200px]">
-                  <input
-                    type="text"
-                    placeholder="Add tags..."
-                    className="w-full bg-transparent border rounded-lg px-3 py-1"
-                    value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && currentTag.trim()) {
-                        setTags([...tags, currentTag.trim()])
-                        setCurrentTag('')
-                      }
-                    }}
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {tags.map(tag => (
-                      <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-sm">
-                        {tag} ×
-                      </span>
+          {/* Entries list - contained within viewport */}
+          <div className="h-[calc(100vh-16rem)]">
+            {/* Entries list */}
+            <div className="space-y-8">
+              {Object.entries(
+                entries
+                  .filter(entry => 
+                    !searchQuery || 
+                    entry.content.toLowerCase().includes(searchQuery) ||
+                    entry.tags.some(tag => tag.toLowerCase().includes(searchQuery))
+                  )
+                  .reduce((groups, entry) => {
+                    const date = new Date(entry.created_at).toDateString()
+                    if (!groups[date]) groups[date] = []
+                    groups[date].push(entry)
+                    return groups
+                  }, {} as Record<string, JournalEntry[]>)
+              ).map(([date, entries]: [string, JournalEntry[]]) => (
+                <div key={date}>
+                  <h3 className="text-lg font-medium mb-4">
+                    {formatDate(date)}
+                  </h3>
+                  <div className="space-y-4">
+                    {entries.map(entry => (
+                      <div 
+                        key={entry.id} 
+                        className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => setSelectedEntry(entry)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
+                            <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
+                          </div>
+                          <span className="text-[--text-secondary] text-sm">
+                            {new Date(entry.created_at).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        {entry.tags?.length > 0 && (
+                          <div className="flex gap-2 mt-2">
+                            {entry.tags.map((tag: string) => (
+                              <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <MoodSelector selected={mood} onSelect={setMood} />
-              
-              {/* Updated text area with border and padding */}
-              <div className="mt-4 border rounded-lg">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.shiftKey && mood) {
-                      e.preventDefault()
-                      handleSubmit(e)
-                    }
-                  }}
-                  placeholder="What's on your mind? Feel free to write as much as you'd like... (Shift+Enter to post)"
-                  className="w-full bg-transparent border-none focus:ring-0 resize-none p-4"
-                  rows={8}
-                />
-              </div>
+              ))}
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="entries">
-            {/* Search and filter controls */}
-            <div className="flex justify-between items-center gap-4 mb-4">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="Search entries..."
-                  className="w-full bg-[--bg-card] border-none rounded-lg px-3 py-2 pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
-                />
-              </div>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-[--bg-card] border-none rounded-lg px-3 py-2 w-[180px]"
-              >
-                {availableMonths.map(month => {
-                  const [year, monthNum] = month.split('-')
-                  const date = new Date(+year, +monthNum - 1)
-                  return (
-                    <option key={month} value={month}>
-                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-
-            {/* Entries list - contained within viewport */}
-            <div className="h-[calc(100vh-16rem)]">
-              {/* Entries list */}
-              <div className="space-y-8">
-                {Object.entries(
-                  entries
-                    .filter(entry => 
-                      !searchQuery || 
-                      entry.content.toLowerCase().includes(searchQuery) ||
-                      entry.tags.some(tag => tag.toLowerCase().includes(searchQuery))
-                    )
-                    .reduce((groups, entry) => {
-                      const date = new Date(entry.created_at).toDateString()
-                      if (!groups[date]) groups[date] = []
-                      groups[date].push(entry)
-                      return groups
-                    }, {} as Record<string, JournalEntry[]>)
-                ).map(([date, entries]: [string, JournalEntry[]]) => (
-                  <div key={date}>
-                    <h3 className="text-lg font-medium mb-4">
-                      {formatDate(date)}
-                    </h3>
-                    <div className="space-y-4">
-                      {entries.map(entry => (
-                        <div 
-                          key={entry.id} 
-                          className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-                          onClick={() => setSelectedEntry(entry)}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
-                              <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
-                            </div>
-                            <span className="text-[--text-secondary] text-sm">
-                              {new Date(entry.created_at).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          {entry.tags?.length > 0 && (
-                            <div className="flex gap-2 mt-2">
-                              {entry.tags.map((tag: string) => (
-                                <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+          {/* Entry Modal */}
+          {selectedEntry && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <span className="text-3xl">{moods.find(m => m.value === selectedEntry.mood)?.emoji}</span>
+                    {selectedEntry.updated_at && selectedEntry.content !== selectedEntry.original_content && (
+                      <div className="mt-2 text-xs text-[--text-secondary]">
+                        last edited {new Date(selectedEntry.updated_at).toLocaleString()}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Entry Modal */}
-            {selectedEntry && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className="text-3xl">{moods.find(m => m.value === selectedEntry.mood)?.emoji}</span>
-                      {selectedEntry.updated_at && selectedEntry.content !== selectedEntry.original_content && (
-                        <div className="mt-2 text-xs text-[--text-secondary]">
-                          last edited {new Date(selectedEntry.updated_at).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (editingEntry) {
-                            handleSave()
-                          } else {
-                            setEditingEntry(selectedEntry)
-                          }
-                        }}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        {editingEntry ? 'Save' : 'Edit'}
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (confirm('Are you sure you want to delete this entry?')) {
-                            handleDelete(selectedEntry.id)
-                            setSelectedEntry(null)
-                          }
-                        }}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Delete
-                      </button>
-                      <button onClick={() => {
-                        setSelectedEntry(null)
-                        setEditingEntry(null)
-                      }}>×</button>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (editingEntry) {
+                          handleSave()
+                        } else {
+                          setEditingEntry(selectedEntry)
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      {editingEntry ? 'Save' : 'Edit'}
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm('Are you sure you want to delete this entry?')) {
+                          handleDelete(selectedEntry.id)
+                          setSelectedEntry(null)
+                        }
+                      }}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                    <button onClick={() => {
+                      setSelectedEntry(null)
+                      setEditingEntry(null)
+                    }}>×</button>
                   </div>
-                  {editingEntry ? (
-                    <textarea
-                      value={editingEntry.content}
-                      onChange={(e) => setEditingEntry({
-                        ...editingEntry,
-                        content: e.target.value
-                      })}
-                      className="w-full bg-transparent border rounded-lg p-4 mb-4"
-                      rows={8}
-                    />
-                  ) : (
-                    <p className="whitespace-pre-wrap mb-4">{selectedEntry.content}</p>
-                  )}
-                  {selectedEntry.tags?.length > 0 && (
-                    <div className="flex gap-2">
-                      {selectedEntry.tags.map((tag: string) => (
-                        <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
+                {editingEntry ? (
+                  <textarea
+                    value={editingEntry.content}
+                    onChange={(e) => setEditingEntry({
+                      ...editingEntry,
+                      content: e.target.value
+                    })}
+                    className="w-full bg-transparent border rounded-lg p-4 mb-4"
+                    rows={8}
+                  />
+                ) : (
+                  <p className="whitespace-pre-wrap mb-4">{selectedEntry.content}</p>
+                )}
+                {selectedEntry.tags?.length > 0 && (
+                  <div className="flex gap-2">
+                    {selectedEntry.tags.map((tag: string) => (
+                      <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
