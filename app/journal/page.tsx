@@ -286,7 +286,7 @@ export default function JournalPage() {
 
           <TabsContent value="entries">
             {/* Search and filter controls */}
-            <div className="flex justify-between items-center mb-8 gap-4">
+            <div className="flex justify-between items-center gap-4 mb-4">
               <div className="relative flex-1">
                 <input
                   type="text"
@@ -295,16 +295,7 @@ export default function JournalPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
                 />
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-secondary]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
               </div>
-
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -322,56 +313,59 @@ export default function JournalPage() {
               </select>
             </div>
 
-            {/* Entries list */}
-            <div className="space-y-8">
-              {Object.entries(
-                entries
-                  .filter(entry => 
-                    !searchQuery || 
-                    entry.content.toLowerCase().includes(searchQuery) ||
-                    entry.tags.some(tag => tag.toLowerCase().includes(searchQuery))
-                  )
-                  .reduce((groups, entry) => {
-                    const date = new Date(entry.created_at).toDateString()
-                    if (!groups[date]) groups[date] = []
-                    groups[date].push(entry)
-                    return groups
-                  }, {} as Record<string, JournalEntry[]>)
-              ).map(([date, entries]: [string, JournalEntry[]]) => (
-                <div key={date}>
-                  <h3 className="text-lg font-medium mb-4">
-                    {formatDate(date)}
-                  </h3>
-                  <div className="space-y-4">
-                    {entries.map(entry => (
-                      <div 
-                        key={entry.id} 
-                        className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-                        onClick={() => setSelectedEntry(entry)}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
-                            <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
+            {/* Entries list - contained within viewport */}
+            <div className="h-[calc(100vh-16rem)]">
+              {/* Entries list */}
+              <div className="space-y-8">
+                {Object.entries(
+                  entries
+                    .filter(entry => 
+                      !searchQuery || 
+                      entry.content.toLowerCase().includes(searchQuery) ||
+                      entry.tags.some(tag => tag.toLowerCase().includes(searchQuery))
+                    )
+                    .reduce((groups, entry) => {
+                      const date = new Date(entry.created_at).toDateString()
+                      if (!groups[date]) groups[date] = []
+                      groups[date].push(entry)
+                      return groups
+                    }, {} as Record<string, JournalEntry[]>)
+                ).map(([date, entries]: [string, JournalEntry[]]) => (
+                  <div key={date}>
+                    <h3 className="text-lg font-medium mb-4">
+                      {formatDate(date)}
+                    </h3>
+                    <div className="space-y-4">
+                      {entries.map(entry => (
+                        <div 
+                          key={entry.id} 
+                          className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => setSelectedEntry(entry)}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
+                              <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
+                            </div>
+                            <span className="text-[--text-secondary] text-sm">
+                              {new Date(entry.created_at).toLocaleTimeString()}
+                            </span>
                           </div>
-                          <span className="text-[--text-secondary] text-sm">
-                            {new Date(entry.created_at).toLocaleTimeString()}
-                          </span>
+                          {entry.tags?.length > 0 && (
+                            <div className="flex gap-2 mt-2">
+                              {entry.tags.map((tag: string) => (
+                                <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {entry.tags?.length > 0 && (
-                          <div className="flex gap-2 mt-2">
-                            {entry.tags.map((tag: string) => (
-                              <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Entry Modal */}
