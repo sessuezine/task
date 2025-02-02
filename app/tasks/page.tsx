@@ -41,11 +41,14 @@ interface HabitCompletion {
   notes?: string;
 }
 
+type TimeFilter = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all'
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'kanban' | 'overview'>('kanban')
+  const [activeTab, setActiveTab] = useState<'kanban' | 'overview' | 'archive'>('kanban')
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('weekly')
   const supabase = createClientComponentClient()
 
   const sensors = useSensors(
@@ -152,10 +155,26 @@ export default function TasksPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="overview">
+        {/* Time Filter */}
+        <div className="flex justify-end mb-4">
+          <select 
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+            className="bg-[--bg-card] border border-[--border] rounded-lg px-3 py-2"
+          >
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+
+        <Tabs defaultValue="kanban">
           <TabsList className="mb-6">
             <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="archive">Archive</TabsTrigger>
           </TabsList>
 
           <TabsContent value="kanban">
@@ -178,6 +197,13 @@ export default function TasksPage() {
                 id="done"
                 fetchTasks={fetchTasks}
               />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="archive">
+            <div className="space-y-4">
+              {/* We'll implement archived tasks here */}
+              <p className="text-[--text-secondary]">Archived tasks will appear here</p>
             </div>
           </TabsContent>
 

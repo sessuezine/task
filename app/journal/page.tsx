@@ -365,7 +365,7 @@ export default function JournalPage() {
 
           {/* Entry Modal */}
           {selectedEntry && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[51]">
               <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div className="flex justify-between items-start mb-4">
                   <div>
