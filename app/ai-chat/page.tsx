@@ -1,3 +1,5 @@
+'use client'
+
 export default function AIChatPage() {
   return (
     <div className="flex-1 p-4 space-y-1">

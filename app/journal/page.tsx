@@ -282,13 +282,13 @@ export default function JournalPage() {
         <TabsContent value="entries">
           {/* Search and filter controls */}
           <div className="flex justify-between items-center gap-4 mb-8">
-            <div className="relative flex-1">
+            <div className="relative flex-1 w-3/4">
               <input
                 type="text"
                 placeholder="Search entries..."
-                className="w-full bg-[--bg-card] border-none rounded-lg px-3 py-2 pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+                className="w-full bg-transparent border rounded-lg px-3 py-2 placeholder:text-[--text-secondary]"
               />
             </div>
             <select
