@@ -324,40 +324,54 @@ export default function JournalPage() {
 
             {/* Entries list */}
             <div className="space-y-8">
-              {entries
-                .filter(entry => 
-                  !searchQuery || 
-                  entry.content.toLowerCase().includes(searchQuery) ||
-                  (entry.tags && entry.tags.some(tag => 
-                    tag.toLowerCase().includes(searchQuery)
-                  ))
-                )
-                .map(entry => (
-                  <div 
-                    key={entry.id} 
-                    className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => setSelectedEntry(entry)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
-                        <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
-                      </div>
-                      <span className="text-[--text-secondary] text-sm">
-                        {new Date(entry.created_at).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    {entry.tags?.length > 0 && (
-                      <div className="flex gap-2 mt-2">
-                        {entry.tags.map(tag => (
-                          <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
-                            {tag}
+              {Object.entries(
+                entries
+                  .filter(entry => 
+                    !searchQuery || 
+                    entry.content.toLowerCase().includes(searchQuery) ||
+                    entry.tags.some(tag => tag.toLowerCase().includes(searchQuery))
+                  )
+                  .reduce((groups, entry) => {
+                    const date = new Date(entry.created_at).toDateString()
+                    if (!groups[date]) groups[date] = []
+                    groups[date].push(entry)
+                    return groups
+                  }, {} as Record<string, JournalEntry[]>)
+              ).map(([date, entries]: [string, JournalEntry[]]) => (
+                <div key={date}>
+                  <h3 className="text-lg font-medium mb-4">
+                    {formatDate(date)}
+                  </h3>
+                  <div className="space-y-4">
+                    {entries.map(entry => (
+                      <div 
+                        key={entry.id} 
+                        className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => setSelectedEntry(entry)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
+                            <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
+                          </div>
+                          <span className="text-[--text-secondary] text-sm">
+                            {new Date(entry.created_at).toLocaleTimeString()}
                           </span>
-                        ))}
+                        </div>
+                        {entry.tags?.length > 0 && (
+                          <div className="flex gap-2 mt-2">
+                            {entry.tags.map((tag: string) => (
+                              <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
 
             {/* Entry Modal */}
@@ -420,7 +434,7 @@ export default function JournalPage() {
                   )}
                   {selectedEntry.tags?.length > 0 && (
                     <div className="flex gap-2">
-                      {selectedEntry.tags.map(tag => (
+                      {selectedEntry.tags.map((tag: string) => (
                         <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
                           {tag}
                         </span>
