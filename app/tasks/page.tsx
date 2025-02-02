@@ -123,113 +123,120 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="p-[--spacing-base] max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Tasks</h1>
-          <button onClick={() => setIsFormOpen(true)} className="add-task-button">
-            Add Task
-          </button>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="p-[--spacing-base] max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-semibold">Tasks</h1>
+            <button onClick={() => setIsFormOpen(true)} className="add-task-button">
+              Add Task
+            </button>
+          </div>
+
+          <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
+              <div>
+                <h2 className="font-medium">Task Summary</h2>
+                <p className="text-[--text-secondary] text-sm">
+                  You have {todoTasks.length} tasks To Do and {inProgressTasks.length} tasks In Progress. Keep up the good work!
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[--bg-task]" />
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-6">
+            <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="kanban">
+            <div className="grid grid-cols-3 gap-6">
+              <KanbanColumn
+                title="To Do"
+                tasks={todoTasks}
+                id="todo"
+                fetchTasks={fetchTasks}
+              />
+              <KanbanColumn
+                title="In Progress"
+                tasks={inProgressTasks}
+                id="in_progress"
+                fetchTasks={fetchTasks}
+              />
+              <KanbanColumn
+                title="Done"
+                tasks={doneTasks}
+                id="done"
+                fetchTasks={fetchTasks}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="overview">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-sm text-blue-600 mb-2">Total Tasks</h3>
+                <p className="text-2xl font-semibold">{tasks.length}</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="text-sm text-green-600 mb-2">Completed</h3>
+                <p className="text-2xl font-semibold">
+                  {tasks.filter(t => t.time_slot === 'done').length}
+                </p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="text-sm text-yellow-600 mb-2">In Progress</h3>
+                <p className="text-2xl font-semibold">
+                  {tasks.filter(t => t.time_slot === 'in progress').length}
+                </p>
+              </div>
+            </div>
+
+            {/* Task List */}
             <div>
-              <h2 className="font-medium">Task Summary</h2>
-              <p className="text-[--text-secondary] text-sm">
-                You have {todoTasks.length} tasks To Do and {inProgressTasks.length} tasks In Progress. Keep up the good work!
-              </p>
+              <h3 className="font-medium mb-4">All Tasks</h3>
+              <div className="space-y-2">
+                {tasks.map(task => (
+                  <div 
+                    key={task.id} 
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition-colors"
+                  >
+                    <span>{task.title}</span>
+                    <span className="text-sm text-[--text-secondary] capitalize">
+                      {task.time_slot.replace('_', ' ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Modal */}
+        {isFormOpen && (
+          <div className="modal-backdrop">
+            <div className="bg-[--bg-card] rounded-lg w-full max-w-md">
+              <TaskForm 
+                onSubmit={async (newTask) => {
+                  await handleCreateTask(newTask)
+                  setIsFormOpen(false)
+                }}
+                onClose={() => setIsFormOpen(false)}
+              />
             </div>
           </div>
-        </div>
+        )}
       </div>
-
-      <Tabs defaultValue="overview">
-        <TabsList className="mb-6">
-          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="kanban">
-          <div className="grid grid-cols-3 gap-6">
-            <KanbanColumn
-              title="To Do"
-              tasks={todoTasks}
-              id="todo"
-              fetchTasks={fetchTasks}
-            />
-            <KanbanColumn
-              title="In Progress"
-              tasks={inProgressTasks}
-              id="in_progress"
-              fetchTasks={fetchTasks}
-            />
-            <KanbanColumn
-              title="Done"
-              tasks={doneTasks}
-              id="done"
-              fetchTasks={fetchTasks}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="overview">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="text-sm text-blue-600 mb-2">Total Tasks</h3>
-              <p className="text-2xl font-semibold">{tasks.length}</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="text-sm text-green-600 mb-2">Completed</h3>
-              <p className="text-2xl font-semibold">
-                {tasks.filter(t => t.time_slot === 'done').length}
-              </p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <h3 className="text-sm text-yellow-600 mb-2">In Progress</h3>
-              <p className="text-2xl font-semibold">
-                {tasks.filter(t => t.time_slot === 'in progress').length}
-              </p>
-            </div>
-          </div>
-
-          {/* Task List */}
-          <div>
-            <h3 className="font-medium mb-4">All Tasks</h3>
-            <div className="space-y-2">
-              {tasks.map(task => (
-                <div 
-                  key={task.id} 
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition-colors"
-                >
-                  <span>{task.title}</span>
-                  <span className="text-sm text-[--text-secondary] capitalize">
-                    {task.time_slot.replace('_', ' ')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Modal */}
-      {isFormOpen && (
-        <div className="modal-backdrop">
-          <div className="bg-[--bg-card] rounded-lg w-full max-w-md">
-            <TaskForm 
-              onSubmit={async (newTask) => {
-                await handleCreateTask(newTask)
-                setIsFormOpen(false)
-              }}
-              onClose={() => setIsFormOpen(false)}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+    </DndContext>
   )
 }
