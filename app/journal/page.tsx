@@ -8,9 +8,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 interface JournalEntry {
   id: string
   content: string
+  original_content: string
   created_at: string
+  updated_at?: string
   mood: string
   ai_summary?: string
+  tags: string[]
 }
 
 export default function JournalPage() {
@@ -23,6 +26,10 @@ export default function JournalPage() {
   })
   const [availableMonths, setAvailableMonths] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentTag, setCurrentTag] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null)
+  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
 
   const supabase = createClientComponentClient()
 
@@ -107,33 +114,79 @@ export default function JournalPage() {
     if (!content.trim() || !mood) return
 
     try {
-      const user = await supabase.auth.getUser()
-      console.log('Current user:', user)
+      if (editingEntry) {
+        await supabase
+          .from('journal_entries')
+          .update({
+            content: content.trim(),
+            mood,
+            tags,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingEntry.id)
+        
+        setEditingEntry(null)
+      } else {
+        const user = await supabase.auth.getUser()
+        console.log('Current user:', user)
 
-      const newEntry = {
-        content: content.trim(),
-        mood,
-        user_id: user.data.user?.id,
-        tags: []
-      }
-      console.log('Attempting to insert:', newEntry)
+        const newEntry = {
+          content: content.trim(),
+          original_content: content.trim(),
+          mood,
+          user_id: user.data.user?.id,
+          tags: [...tags, currentTag.trim()],
+        }
+        console.log('Attempting to insert:', newEntry)
 
-      const { data, error } = await supabase
-        .from('journal_entries')
-        .insert(newEntry)
-        .select()
+        const { data, error } = await supabase
+          .from('journal_entries')
+          .insert(newEntry)
+          .select()
 
-      if (error) {
-        console.error('Error details:', error)
-        throw error
+        if (error) {
+          console.error('Error details:', error)
+          throw error
+        }
+        
+        console.log('Inserted entry:', data)
       }
       
-      console.log('Inserted entry:', data)
       setContent('')
       setMood(null)
+      setTags([])
+      setCurrentTag('')
       await fetchEntries()
     } catch (error) {
-      console.error('Error creating entry:', error)
+      console.error('Error saving entry:', error)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!editingEntry) return
+
+    try {
+      const updates: any = {
+        content: editingEntry.content,
+        mood: editingEntry.mood,
+        tags: editingEntry.tags,
+      }
+      
+      // Only add updated_at if content has changed
+      if (editingEntry.content !== editingEntry.original_content) {
+        updates.updated_at = new Date().toISOString()
+      }
+
+      await supabase
+        .from('journal_entries')
+        .update(updates)
+        .eq('id', editingEntry.id)
+      
+      await fetchEntries()
+      setEditingEntry(null)
+      setSelectedEntry(null)
+    } catch (error) {
+      console.error('Error updating entry:', error)
     }
   }
 
@@ -149,6 +202,19 @@ export default function JournalPage() {
     return Object.entries(groups).sort((a, b) => 
       new Date(b[0]).getTime() - new Date(a[0]).getTime()
     )
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', id)
+      
+      await fetchEntries()
+    } catch (error) {
+      console.error('Error deleting entry:', error)
+    }
   }
 
   return (
@@ -170,22 +236,51 @@ export default function JournalPage() {
           </TabsList>
 
           <TabsContent value="posts">
-            {/* Simple post interface */}
-            <div className="bg-[--bg-card] rounded-lg p-4 shadow-sm">
+            <div className="bg-[--bg-card] rounded-lg shadow-sm">
+              {/* Tags input */}
+              <div className="flex justify-end mb-4">
+                <div className="relative w-[200px]">
+                  <input
+                    type="text"
+                    placeholder="Add tags..."
+                    className="w-full bg-transparent border rounded-lg px-3 py-1"
+                    value={currentTag}
+                    onChange={(e) => setCurrentTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && currentTag.trim()) {
+                        setTags([...tags, currentTag.trim()])
+                        setCurrentTag('')
+                      }
+                    }}
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {tags.map(tag => (
+                      <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-sm">
+                        {tag} ×
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <MoodSelector selected={mood} onSelect={setMood} />
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && mood) {
-                    e.preventDefault()
-                    handleSubmit(e)
-                  }
-                }}
-                placeholder="What's on your mind?"
-                className="w-full bg-transparent border-none focus:ring-0 resize-none"
-                rows={3}
-              />
+              
+              {/* Updated text area with border and padding */}
+              <div className="mt-4 border rounded-lg">
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.shiftKey && mood) {
+                      e.preventDefault()
+                      handleSubmit(e)
+                    }
+                  }}
+                  placeholder="What's on your mind? Feel free to write as much as you'd like... (Shift+Enter to post)"
+                  className="w-full bg-transparent border-none focus:ring-0 resize-none p-4"
+                  rows={8}
+                />
+              </div>
             </div>
           </TabsContent>
 
@@ -231,7 +326,8 @@ export default function JournalPage() {
               {groupEntriesByDay()
                 .filter(([_, entries]) => 
                   !searchQuery || entries.some(entry => 
-                    entry.content.toLowerCase().includes(searchQuery.toLowerCase())
+                    entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    entry.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
                   )
                 )
                 .map(([date, dayEntries]) => (
@@ -239,23 +335,27 @@ export default function JournalPage() {
                     <h3 className="text-lg font-medium mb-4">{formatDate(date)}</h3>
                     <div className="space-y-4">
                       {dayEntries.map(entry => (
-                        <div key={entry.id} className="bg-[--bg-card] p-4 rounded-lg shadow-sm">
+                        <div 
+                          key={entry.id} 
+                          className="bg-[--bg-card] p-4 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => setSelectedEntry(entry)}
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-3">
-                              <span className="text-2xl" title={entry.mood}>
-                                {moods.find(m => m.value === entry.mood)?.emoji}
-                              </span>
-                              <p className="whitespace-pre-wrap">{entry.content}</p>
+                              <span className="text-2xl">{moods.find(m => m.value === entry.mood)?.emoji}</span>
+                              <p className="line-clamp-2">{entry.content.split('.')[0]}</p>
                             </div>
                             <span className="text-[--text-secondary] text-sm">
                               {new Date(entry.created_at).toLocaleTimeString()}
                             </span>
                           </div>
-                          {entry.ai_summary && (
-                            <div className="mt-4 p-3 bg-[--bg-task] rounded-md">
-                              <p className="text-sm text-[--text-secondary]">
-                                AI Summary: {entry.ai_summary}
-                              </p>
+                          {entry.tags?.length > 0 && (
+                            <div className="flex gap-2 mt-2">
+                              {entry.tags.map(tag => (
+                                <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
+                                  {tag}
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -264,6 +364,77 @@ export default function JournalPage() {
                   </div>
                 ))}
             </div>
+
+            {/* Entry Modal */}
+            {selectedEntry && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className="text-3xl">{moods.find(m => m.value === selectedEntry.mood)?.emoji}</span>
+                      {selectedEntry.updated_at && selectedEntry.content !== selectedEntry.original_content && (
+                        <div className="mt-2 text-xs text-[--text-secondary]">
+                          last edited {new Date(selectedEntry.updated_at).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (editingEntry) {
+                            handleSave()
+                          } else {
+                            setEditingEntry(selectedEntry)
+                          }
+                        }}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        {editingEntry ? 'Save' : 'Edit'}
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (confirm('Are you sure you want to delete this entry?')) {
+                            handleDelete(selectedEntry.id)
+                            setSelectedEntry(null)
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                      <button onClick={() => {
+                        setSelectedEntry(null)
+                        setEditingEntry(null)
+                      }}>×</button>
+                    </div>
+                  </div>
+                  {editingEntry ? (
+                    <textarea
+                      value={editingEntry.content}
+                      onChange={(e) => setEditingEntry({
+                        ...editingEntry,
+                        content: e.target.value
+                      })}
+                      className="w-full bg-transparent border rounded-lg p-4 mb-4"
+                      rows={8}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap mb-4">{selectedEntry.content}</p>
+                  )}
+                  {selectedEntry.tags?.length > 0 && (
+                    <div className="flex gap-2">
+                      {selectedEntry.tags.map(tag => (
+                        <span key={tag} className="bg-[--bg-task] px-2 py-1 rounded-full text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
